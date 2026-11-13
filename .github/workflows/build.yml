@@ -34,10 +34,14 @@ jobs:
           distribution: temurin
           java-version: "21"
       # The runner image already has the Android SDK ($ANDROID_HOME) and its sdkmanager.
-      - name: Android platform 37
+      # Accept the licenses; the platform (compileSdk release(37)) is fetched by the Android
+      # Gradle Plugin if it is missing. Trying the two package names first only saves time:
+      # a name this sdkmanager does not know is not an error here.
+      - name: Android SDK licenses and platform 37
         run: |
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37"
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKM" --licenses > /dev/null 2>&1 || true
+          "$SDKM" "platforms;android-37.0" || "$SDKM" "platforms;android-37" || echo "platform 37 left to Gradle"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: wrapper
