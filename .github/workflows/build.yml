@@ -45,8 +45,23 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: wrapper
+      # The app's SESL libraries come from tribalfs' GitHub Packages repo, which answers 401
+      # without a login (app-android/settings.gradle.kts reads these two variables). The
+      # repository's own GITHUB_TOKEN cannot read another account's packages: use a personal
+      # access token (classic, scope read:packages) saved as the secret GH_PACKAGES_TOKEN.
+      - name: Check the packages token
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+        run: |
+          if [ -z "$GH_PACKAGES_TOKEN" ]; then
+            echo "::error::Add a repository secret GH_PACKAGES_TOKEN (a classic personal access token with read:packages): Settings > Secrets and variables > Actions."
+            exit 1
+          fi
       - name: Build OneOS Probe (debug)
         working-directory: app-android
+        env:
+          GH_PACKAGES_USER: ${{ github.repository_owner }}
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
         run: |
           chmod +x gradlew
           ./gradlew --max-workers=3 assembleProbeDebug
